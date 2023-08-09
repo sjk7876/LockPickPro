@@ -22,23 +22,29 @@ viewmodel -
 	sha1 hashing
 	sha256 hashing
 	md5 hashing
- 
+
 	import password list
-	random password generation
- 
+	
+	have list of password wordlists that one can use
+		provide user ability to select wordlist
+	mangle option
+	
+	"generating word list"
+	then go to progress bar after
+
 	hash finding
 	
 	gpu threading
- 
+
 	potentially bcrypt
 	potentially cpu multi threading
 
 	option to input a plain-text password + hashing algo
- 
+
 cli - 
 	extremely basic
 	"dank memes"
- 
+
 gui - 
 	loading bar
 	select # cores
@@ -67,6 +73,9 @@ def hashPassword(password, algo):
             return hashlib.sha1(password.encode()).hexdigest()
         case "sha256":
             return hashlib.sha256(password.encode()).hexdigest()
+
+
+def crackPassword(password):
 
 
 def main():
