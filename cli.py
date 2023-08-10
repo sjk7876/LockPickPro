@@ -1,23 +1,24 @@
 import bruteforce
 
 def main():
-    password = "P@ssw0rd"
+    # password = "P@ssw0rd"
+    password = "Change"
     algo = "md5"
     wordlist = "wordlists/fasttrack.txt"
-    # hash = bruteforce.hashPasswordWithAlgo(password, algo)
+    passwordHash = bruteforce.hashPasswordWithAlgo(password, algo)
+    mangle = False
     
-    hash = input("Input hash to use: ")
+# Hashes
+    # hash = input("Input hash to use: ")
 
-    
+# input pass + algo
     # password, algo = bruteforce.getPasswordFromStdIn()
-    
-    # hash = bruteforce.hashPasswordWithAlgo(password, algo)
+    # passwordHash = bruteforce.hashPasswordWithAlgo(password, algo)
 
-    # print(bruteforce.hashPasswordWithAlgo(password, algo))
-    
+# input wordlist    
     # wordlist = "wordlists/" + input("Input the filename of the word list to use: ")
     
-    print(bruteforce.crackPassword(hash, wordlist))
+    print(bruteforce.crackPassword(passwordHash, wordlist, mangle))
             
 
 

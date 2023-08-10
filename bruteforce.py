@@ -99,6 +99,20 @@ def hashPasswordWithoutAlgo(password):
 
 
 """
+Given a hash, guesses the algorithm
+
+@param password		String, hash to guess
+@return				String, guessed algorithm
+"""
+def determineHashAlgo(password):
+	if len(password) == 32:
+		return "md5"
+	elif len(password) == 40:
+		return "sha1"
+	elif len(password) == 64:
+		return "sha256"
+
+"""
 Brute forces a given hash with a wordlist
 If given the mangle flag, it calls a function to 'mangle' the list
 
@@ -108,15 +122,23 @@ If given the mangle flag, it calls a function to 'mangle' the list
 @return			password the hash is associated with or None
 """
 def crackPassword(hash, file, mangle):
-	with open(file, "r") as wordListFile:
-		wordList = wordListFile.read().splitlines()
-	
-	# if mangle:
-	# 	wordList = mangleList(wordList)
+	try:
+		with open(file, "r") as wordListFile:
+			wordList = wordListFile.read().splitlines()
+		
+		if mangle:
+			wordList = mangleList(wordList)
 
-	for word in wordList:
-		if hash in hashPasswordWithoutAlgo(word):
-			return word
+		for word in wordList:
+			if hash in hashPasswordWithoutAlgo(word):
+				return word
+	except Exception:
+		print("File does not exist")
+
+
+def mangleList(wordList):
+	return wordList
+
 
 def main():
 	print()
