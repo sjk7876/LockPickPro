@@ -16,6 +16,7 @@ import numpy
 
 # CPU Multi-threading
 import threading
+import multiprocessing
 
 import time
 
@@ -294,18 +295,33 @@ def startCrackWithCPU(passwordHash, algo, file, mangle):
 		print("Error reading file")
 		return None
 
-	numThreads = 8
+	# w/ multiprocessing
+	numThreads = 12
 	seperatedList = list(divideList(wordList, numThreads))
 
 	# Create threads
 	threads = []
 	for i in range(numThreads):
-		thread = threading.Thread(target=crackPassword, args=(passwordHash, algo, seperatedList[i], True))
+		thread = multiprocessing.Process(target=crackPassword, args=(passwordHash, algo, seperatedList[i], mangle))
 		threads.append(thread)
 		thread.start()
 
 	for thread in threads:
 		thread.join()
+
+	# w/ threading
+	# numThreads = 8
+	# seperatedList = list(divideList(wordList, numThreads))
+
+	# # Create threads
+	# threads = []
+	# for i in range(numThreads):
+	# 	thread = threading.Thread(target=crackPassword, args=(passwordHash, algo, seperatedList[i], True))
+	# 	threads.append(thread)
+	# 	thread.start()
+
+	# for thread in threads:
+	# 	thread.join()
 
 	# crackPassword(passwordHash, algo, seperatedList, mangle)
 
