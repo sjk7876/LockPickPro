@@ -15,6 +15,8 @@ import numpy
 # CPU Multi-threading
 import threading
 
+import time
+
 """
 password sha1 	- 5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8
 password sha256 - 5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8
@@ -100,6 +102,61 @@ def crackPassword(wordList, passwordHash, algo, result):
 			result[0] = i
 			result[1] = 1
 """
+"""
+def startCrackWithGPU(passwordHash, algo, file, mangle):
+	""
+	Brute forces a given hash with a wordlist with a GPU
+	If given the mangle flag, it calls a function to 'mangle' the list
+
+	@param hash		String, hash to find
+	@param algo		String, algorithm used for hash
+	@param file		String, word list to use
+	@param mangle	Bool, 
+	@return			password the hash is associated with or None
+	""
+
+	# try:
+	with open(file, "r") as wordListFile:
+		wordList = wordListFile.read().splitlines()
+	
+	# if mangle:
+	# 	wordList = mangleList(wordList)
+
+	print("e")
+	d_wordList = cuda.to_device(numpy.array(wordList))
+	print("E")
+	d_result = cuda.device_array((2,), dtype=numpy.int32)
+
+
+	print("Eee")
+	threadsPerBlock = 32
+	blocksPerGrid = (len(wordList) + (threadsPerBlock - 1)) // threadsPerBlock
+
+	print("EEEE")
+	# crackPassword[blocksPerGrid, threadsPerBlock](d_wordList, passwordHash, algo, d_result)
+	print("ff")
+	result = d_result.copy_to_host()
+	print("FFF")
+	if result[1] == 1:
+		print("Password found:", wordList[result[0]])
+	else:
+		print("Password not found in the given word list.")
+
+		# for word in wordList:
+		# 	if passwordHash in hashPasswordWithAlgo(word, algo):
+		# 		return word
+	# except Exception:
+	# 	print(Exception)
+	# 	print("File does not exist")
+"""
+
+
+# Global variable to stop thread execution
+cancelThreads = False
+
+# Global variable to return solution
+solution = None
+		
 
 
 def getPasswordFromStdIn():
@@ -175,54 +232,6 @@ def determineHashAlgo(password):
 	elif len(password) == 64:
 		return "sha256"
 
-"""
-def startCrackWithGPU(passwordHash, algo, file, mangle):
-	""
-	Brute forces a given hash with a wordlist with a GPU
-	If given the mangle flag, it calls a function to 'mangle' the list
-
-	@param hash		String, hash to find
-	@param algo		String, algorithm used for hash
-	@param file		String, word list to use
-	@param mangle	Bool, 
-	@return			password the hash is associated with or None
-	""
-
-	# try:
-	with open(file, "r") as wordListFile:
-		wordList = wordListFile.read().splitlines()
-	
-	# if mangle:
-	# 	wordList = mangleList(wordList)
-
-	print("e")
-	d_wordList = cuda.to_device(numpy.array(wordList))
-	print("E")
-	d_result = cuda.device_array((2,), dtype=numpy.int32)
-
-
-	print("Eee")
-	threadsPerBlock = 32
-	blocksPerGrid = (len(wordList) + (threadsPerBlock - 1)) // threadsPerBlock
-
-	print("EEEE")
-	# crackPassword[blocksPerGrid, threadsPerBlock](d_wordList, passwordHash, algo, d_result)
-	print("ff")
-	result = d_result.copy_to_host()
-	print("FFF")
-	if result[1] == 1:
-		print("Password found:", wordList[result[0]])
-	else:
-		print("Password not found in the given word list.")
-
-		# for word in wordList:
-		# 	if passwordHash in hashPasswordWithAlgo(word, algo):
-		# 		return word
-	# except Exception:
-	# 	print(Exception)
-	# 	print("File does not exist")
-"""
-
 
 def crackPassword(passwordHash, algo, wordList, mangle):
 	"""
@@ -234,20 +243,30 @@ def crackPassword(passwordHash, algo, wordList, mangle):
 		algo (String): Hashing algorithm to test with
 		wordList (List): List of words to use
 		mangle (Bool): Mangles each words
-
-	Returns:
-		String: Matching password or None type
-	"""
-	print("gg")
-	for word in wordList:		
-		if algo == "md5" and hashlib.md5(word.encode()).hexdigest() == passwordHash: 
-			return word
-		if algo == "sha1" and hashlib.sha1(word.encode()).hexdigest() == passwordHash:
-			return word
-		if algo == "sha256" and hashlib.sha256(word.encode()).hexdigest() == passwordHash:
-			return word
+	"""	
+	global cancelThreads
+	global solution
 	
-	return None
+	for word in wordList:	
+		if cancelThreads:
+			return
+		
+		if algo == "md5" and hashlib.md5(word.encode()).hexdigest() == passwordHash:
+			cancelThreads = True
+			solution = word
+			return
+			
+		if algo == "sha1" and hashlib.sha1(word.encode()).hexdigest() == passwordHash:
+			cancelThreads = True
+			solution = word
+			return
+		
+		if algo == "sha256" and hashlib.sha256(word.encode()).hexdigest() == passwordHash:
+			cancelThreads = True
+			solution = word
+			return
+	
+	return
 
 	
 def startCrackWithCPU(passwordHash, algo, file, mangle):
@@ -260,48 +279,66 @@ def startCrackWithCPU(passwordHash, algo, file, mangle):
 		algo (String): Algorithm to use
 		file (String): File containing word list
 		mangle (Bool): Flag to mangle each word
+
+	Returns
+		String: Returns found word or None type
 	"""
-	
+	tic = time.perf_counter()
 	try:
 		with open(file, "r") as wordListFile:
 			wordList = wordListFile.read().splitlines()
-		
-		numThreads = 4
-
-		seperatedList = divideList(wordList, numThreads)
-
-		result = 
-
-		# if mangle:
-		# 	wordList = mangleList(wordList)
-
-		if result[1] == 1:
-			print("Password found:", wordList[result[0]])
-		else:
-			print("Password not found in the given word list.")
-
-			# for word in wordList:
-			# 	if passwordHash in hashPasswordWithAlgo(word, algo):
-			# 		return word
 	except Exception:
 		print(Exception)
-		print("File does not exist")
+		print("Error reading file")
+		return None
+
+	# if mangle:
+	# 	wordList = mangleList(wordList)
+
+	numThreads = 8
+	seperatedList = list(divideList(wordList, numThreads))
+
+	# Create threads
+	threads = []
+	for i in range(numThreads):
+		thread = threading.Thread(target=crackPassword, args=(passwordHash, algo, seperatedList[i], False))
+		threads.append(thread)
+		thread.start()
+
+	for thread in threads:
+		thread.join()
+
+	crackPassword(passwordHash, algo, seperatedList, False)
+
+	result = solution if solution is not None else None
+
+	if result is not None:
+		print("Password found:", result)
+	elif mangle:
+		print("Password not in given word list nor is a variation of a word in the word list")
+	else:
+		print("Password not found in the given word list.")
+	
+	toc = time.perf_counter()
+	print(f"{toc - tic:0.4f} seconds")
+
+	return result
 
 
-def divideList(list, size):
+def divideList(list, num):
 	"""
-	Divides a list into chunks
+	Divides a list into num sublists
 
 	Args:
 		list (List): List to subdivide
-		size (Int): Size of chunks
+		num (Int): Number of chunks
 
 	Yields:
 		List: List containing subdivided list, each of size Size
 	"""
 
-	for i in range(0, len(list), size):
-		yield list[i:i + size]
+	for i in range(num):
+		yield list[i::num]
 
 
 def mangleList(wordList):

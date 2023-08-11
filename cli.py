@@ -8,7 +8,7 @@ def main():
     passwordHash = bruteforce.hashPasswordWithAlgo(password, algo)
     mangle = False
 
-    print(bruteforce.determineHashAlgo(passwordHash))
+    algo = bruteforce.determineHashAlgo(passwordHash)
     
 # Hashes
     # hash = input("Input hash to use: ")
@@ -23,7 +23,7 @@ def main():
     # print(bruteforce.startCrack(passwordHash, algo, wordlist, mangle))
 
     # print("cuda", bruteforce.get_cuda_cores())
-    bruteforce.startCrack(passwordHash, algo, wordlist, mangle)
+    bruteforce.startCrackWithCPU(passwordHash, algo, wordlist, mangle)
             
 
 
