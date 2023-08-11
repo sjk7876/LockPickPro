@@ -156,7 +156,6 @@ cancelThreads = False
 
 # Global variable to return solution
 solution = None
-		
 
 
 def getPasswordFromStdIn():
@@ -243,30 +242,35 @@ def crackPassword(passwordHash, algo, wordList, mangle):
 		algo (String): Hashing algorithm to test with
 		wordList (List): List of words to use
 		mangle (Bool): Mangles each words
-	"""	
+	"""
 	global cancelThreads
 	global solution
 	
-	for word in wordList:	
-		if cancelThreads:
+	for word in wordList:
+		mangledList = [word]
+		# print(type(word))
+		if cancelThreads or type(word) is list:
 			return
+
+		if mangle:
+			#do mangle stuff here / call mangle function
+			mangledList = mangleList(word)
 		
-		if algo == "md5" and hashlib.md5(word.encode()).hexdigest() == passwordHash:
-			cancelThreads = True
-			solution = word
-			return
+		for mangle in mangledList:
+			if algo == "md5" and hashlib.md5(word.encode()).hexdigest() == passwordHash:
+				cancelThreads = True
+				solution = word
+				return
+				
+			if algo == "sha1" and hashlib.sha1(word.encode()).hexdigest() == passwordHash:
+				cancelThreads = True
+				solution = word
+				return
 			
-		if algo == "sha1" and hashlib.sha1(word.encode()).hexdigest() == passwordHash:
-			cancelThreads = True
-			solution = word
-			return
-		
-		if algo == "sha256" and hashlib.sha256(word.encode()).hexdigest() == passwordHash:
-			cancelThreads = True
-			solution = word
-			return
-	
-	return
+			if algo == "sha256" and hashlib.sha256(word.encode()).hexdigest() == passwordHash:
+				cancelThreads = True
+				solution = word
+				return
 
 	
 def startCrackWithCPU(passwordHash, algo, file, mangle):
@@ -295,7 +299,7 @@ def startCrackWithCPU(passwordHash, algo, file, mangle):
 	# if mangle:
 	# 	wordList = mangleList(wordList)
 
-	numThreads = 8
+	numThreads = 4
 	seperatedList = list(divideList(wordList, numThreads))
 
 	# Create threads
@@ -341,8 +345,22 @@ def divideList(list, num):
 		yield list[i::num]
 
 
-def mangleList(wordList):
-	return wordList
+def mangleList(masterWord):
+	"""
+	Given a word, generates a list of variants that are 'mangled'
+
+	Args:
+		masterWord (String): Word to mangle
+
+	Returns:
+		List: String list of mangled words
+	"""
+	wordList = [masterWord]
+	temp = []
+
+	# do mangle shit
+
+	return masterWord
 
 
 def main():
