@@ -7,6 +7,8 @@ Uses multi-threading to speed up process
 
 import hashlib
 
+from itertools import product
+
 # GPU Acceleration
 import numpy
 # import numba
@@ -186,9 +188,6 @@ def hashPasswordWithAlgo(password, algo):
 	Returns:
 		String: hex value of hash
 	"""
-
-	hash
-
 	if algo == "md5":
 		return hashlib.md5(password.encode()).hexdigest()
 	elif algo == "sha1":
@@ -248,28 +247,27 @@ def crackPassword(passwordHash, algo, wordList, mangle):
 	
 	for word in wordList:
 		mangledList = [word]
-		# print(type(word))
+
 		if cancelThreads or type(word) is list:
 			return
 
-		if mangle:
-			#do mangle stuff here / call mangle function
+		if mangle and word != "":
 			mangledList = mangleList(word)
-		
+
 		for mangle in mangledList:
-			if algo == "md5" and hashlib.md5(word.encode()).hexdigest() == passwordHash:
+			if algo == "md5" and hashlib.md5(mangle.encode()).hexdigest() == passwordHash:
 				cancelThreads = True
-				solution = word
+				solution = mangle
 				return
 				
-			if algo == "sha1" and hashlib.sha1(word.encode()).hexdigest() == passwordHash:
+			if algo == "sha1" and hashlib.sha1(mangle.encode()).hexdigest() == passwordHash:
 				cancelThreads = True
-				solution = word
+				solution = mangle
 				return
 			
-			if algo == "sha256" and hashlib.sha256(word.encode()).hexdigest() == passwordHash:
+			if algo == "sha256" and hashlib.sha256(mangle.encode()).hexdigest() == passwordHash:
 				cancelThreads = True
-				solution = word
+				solution = mangle
 				return
 
 	
@@ -296,23 +294,20 @@ def startCrackWithCPU(passwordHash, algo, file, mangle):
 		print("Error reading file")
 		return None
 
-	# if mangle:
-	# 	wordList = mangleList(wordList)
-
-	numThreads = 4
+	numThreads = 8
 	seperatedList = list(divideList(wordList, numThreads))
 
 	# Create threads
 	threads = []
 	for i in range(numThreads):
-		thread = threading.Thread(target=crackPassword, args=(passwordHash, algo, seperatedList[i], False))
+		thread = threading.Thread(target=crackPassword, args=(passwordHash, algo, seperatedList[i], True))
 		threads.append(thread)
 		thread.start()
 
 	for thread in threads:
 		thread.join()
 
-	crackPassword(passwordHash, algo, seperatedList, False)
+	# crackPassword(passwordHash, algo, seperatedList, mangle)
 
 	result = solution if solution is not None else None
 
@@ -355,12 +350,91 @@ def mangleList(masterWord):
 	Returns:
 		List: String list of mangled words
 	"""
-	wordList = [masterWord]
-	temp = []
-
 	# do mangle shit
+	"""
+	lowercase
+	uppercase
+	numbers
+	symbols
+	common add ons (123)
+	leet
+	"""
+	wordList = [masterWord, masterWord.upper()]
+	wordList.append(masterWord.lower())
 
-	return masterWord
+	temp = masterWord[0].upper()
+	for i in range(1, len(masterWord)):
+		temp += masterWord[i]
+
+	wordList.append(temp)
+
+	wordListRecurse = []
+	[wordListRecurse.append(x) for x in wordList if x not in wordListRecurse]
+
+	for _ in range(2):
+		temp = []
+		for x in wordListRecurse:
+			temp.extend(generateLeetVariants(x))
+			temp.extend(generateSymbolVariants(x))
+		wordListRecurse.extend(temp)
+	
+	temp = []
+	for x in wordListRecurse:
+		temp.extend((f"{x}1", f"{x}123", f"{x}abc", f"{x}!")) # Append common patterns
+		temp.extend((f"1{x}", f"123{x}", f"abc{x}", f"!{x}")) # Prepend common patterns
+
+		for i in range(1970, 2023):
+			temp.append(x + str(i))
+			temp.append(str(i) + x)
+
+	wordListRecurse.extend(temp)
+	
+	res = []
+	[res.append(x) for x in wordListRecurse if x not in res]
+
+	return res
+
+
+def generateLeetVariants(word):
+	"""
+	Generates leet variants of a word
+
+	Args:
+		word (String): original word
+
+	Returns:
+		List: String list of word variants
+	"""
+
+	replace = {'a': '4', 'b': '8', 'e': '3', 'g': '6', 'i': '1', 'o': '0', 's': '5', 't': '7', 'z': '2'}
+
+	possibles = []
+	for l in word:
+		ll = replace.get(l, l)
+		possibles.append( (l,) if ll == l else (l, ll) )
+	
+	return [ ''.join(t) for t in product(*possibles) ]
+
+
+def generateSymbolVariants(word):
+	"""
+	Generates symbol variants of a word (ex pass can become pa$$)
+
+	Args:
+		word (String): original word
+
+	Returns:
+		List: String list of symbol variants
+	"""
+
+	replace = {'a': '@', 's': '$'}
+
+	possibles = []
+	for l in word:
+		ll = replace.get(l, l)
+		possibles.append( (l,) if ll == l else (l, ll) )
+	
+	return [ ''.join(t) for t in product(*possibles) ]
 
 
 def main():

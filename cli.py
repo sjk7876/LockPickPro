@@ -2,11 +2,11 @@ import bruteforce
 
 def main():
     # password = "P@ssw0rd"
-    password = "Starwars"
+    password = "P@s5w0rd"
     algo = "md5"
     wordlist = "wordlists/fasttrack.txt"
     passwordHash = bruteforce.hashPasswordWithAlgo(password, algo)
-    mangle = False
+    mangle = True
 
     algo = bruteforce.determineHashAlgo(passwordHash)
     
@@ -24,7 +24,7 @@ def main():
 
     # print("cuda", bruteforce.get_cuda_cores())
 
-    for _ in range(5):
+    for _ in range(1):
         bruteforce.startCrackWithCPU(passwordHash, algo, wordlist, mangle)
             
 
