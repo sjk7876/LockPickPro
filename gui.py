@@ -9,36 +9,28 @@ import bruteforce
 import tkinter
 from tkinter import StringVar, messagebox, ttk, E, BooleanVar, Frame
 from tkinter import messagebox
-# from tkinter.ttk import *
+
+from threading import Thread
 
 """
 TODO
 metal pipe falling sound
 nyan cat loading bar ?
 
-min size
-max size
-
 GENERATE EXE
 """
+
 
 # Global to hold current hash, file location, and mangle flag
 masterHash = ""
 masterFile = ""
 masterMangle = False
 
+
 def main():
     global frame
 
     gui = App()
-
-    # goToStart(gui)
-
-    # frame = startFrame(gui)
-    # frame.pack()
-    
-    # start = startFrame(gui)
-    # options = optionsFrame(gui)
 
     gui.mainloop()
 
@@ -59,20 +51,31 @@ class App(tkinter.Tk):
 
         self.frames = {}
         for F in (startFrame, optionsFrame, computeFrame):
-            page_name = F.__name__
+            frame_name = F.__name__
             frame = F(parent=container, controller=self)
-            self.frames[page_name] = frame
+            self.frames[frame_name] = frame            
 
-            # put all of the pages in the same location;
-            # the one on the top of the stacking order
-            # will be the one that is visible.
             frame.grid(row=0, column=0, sticky="nsew")
 
         self.show_frame("startFrame")
 
-    def show_frame(self, page_name):
-        frame = self.frames[page_name]
+    def show_frame(self, frame_name):
+        frame = self.frames[frame_name]
         frame.tkraise()
+
+        if frame_name == "computeFrame":
+            self.processComputeTask(frame)
+    
+    def processComputeTask(self, computeFrame):
+        def task():
+            computeFrame.reset()
+            algo = bruteforce.determineHashAlgo(masterHash)
+            found_pass = bruteforce.startCrackWithCPU(masterHash, algo, masterFile, masterMangle)
+
+            self.after(0, lambda: computeFrame.update_ui(algo, found_pass))
+
+        thread = Thread(target=task)
+        thread.start()
 
 
 class startFrame(ttk.Frame):
@@ -211,17 +214,14 @@ class computeFrame(ttk.Frame):
         self.foundLabel = ttk.Label(self, text="Found Password:")
         self.algoLabel = ttk.Label(self, text="Algorithm Used:")
 
-        algo = bruteforce.determineHashAlgo(masterHash)
+        # algo = bruteforce.determineHashAlgo(masterHash)
 
-        foundPass = bruteforce.startCrackWithCPU(masterHash, algo, masterFile, masterMangle)
+        # foundPass = bruteforce.startCrackWithCPU(masterHash, algo, masterFile, masterMangle)
 
         # Create labels for output
-        if foundPass is None:
-            self.foundOutLabel = ttk.Label(self, text="Match not found")
-        else:
-            self.foundOutLabel = ttk.Label(self, text=foundPass)
+        self.foundOutLabel = ttk.Label(self, text="")
 
-        self.algoOutLabel = ttk.Label(self, text=algo)
+        self.algoOutLabel = ttk.Label(self, text="")
 
         # Create continue button
         self.computePageCont = ttk.Button(self, text="restart", command=lambda: controller.show_frame("startFrame"))
@@ -233,6 +233,19 @@ class computeFrame(ttk.Frame):
         self.algoLabel.grid(row=2, column=0, padx=10, pady=5, sticky=E)
         self.algoOutLabel.grid(row=2, column=1, padx=10, pady=5, sticky=E)
         self.computePageCont.grid(row=3, column=1, padx=10, pady=5, sticky=E)
+    
+
+    def update_ui(self, algo, foundPass):
+        self.algoOutLabel.config(text=algo)
+        if foundPass is not None:
+            self.foundOutLabel.config(text=foundPass)
+        else: 
+            self.foundOutLabel.config(text="No match found")
+    
+    
+    def reset(self):
+        self.algoOutLabel.config(text="")
+        self.foundOutLabel.config(text="")
 
 
 if (__name__ == "__main__"):
