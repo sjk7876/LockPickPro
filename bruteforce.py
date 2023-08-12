@@ -6,19 +6,18 @@ Uses multi-threading to speed up process
 """
 
 import hashlib
-
+import time
 from itertools import product
 
 # GPU Acceleration
-import numpy
+#import numpy
 # import numba
 # from numba import cuda
 
 # CPU Multi-threading
-import threading
+#import threading
 import multiprocessing
 
-import time
 
 """
 password sha1 	- 5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8
@@ -154,13 +153,6 @@ def startCrackWithGPU(passwordHash, algo, file, mangle):
 """
 
 
-# Global variable to stop thread execution
-cancelThreads = False
-
-# Global variable to return solution
-solution = None
-
-
 def getPasswordFromStdIn():
 	"""
 	Prompts user for a password and hashing algorithm to use
@@ -232,7 +224,7 @@ def determineHashAlgo(password):
 		return "sha256"
 
 
-def crackPassword(passwordHash, algo, wordList, mangle):
+def crackPassword(passwordHash, algo, wordList, mangle, solution):
 	"""
 	Attempts to find a hash value that matches the given hash using a word list
 	If given the mangle flag, creates variants of each word with random chars, capitalization, etc
@@ -242,33 +234,32 @@ def crackPassword(passwordHash, algo, wordList, mangle):
 		algo (String): Hashing algorithm to test with
 		wordList (List): List of words to use
 		mangle (Bool): Mangles each words
+		solution (String): Return variable for the solution (if found)
 	"""
-	global cancelThreads
-	global solution
-	
+
 	for word in wordList:
 		mangledList = [word]
 
-		if cancelThreads or type(word) is list:
+		if type(word) is list or solution.value is not None:
 			return
 
 		if mangle and word != "":
 			mangledList = mangleList(word)
 
-		for mangle in mangledList:
-			if algo == "md5" and hashlib.md5(mangle.encode()).hexdigest() == passwordHash:
-				cancelThreads = True
-				solution = mangle
+		for mangledWord in mangledList:
+			if type(word) is list or solution.value is not None:
+				return
+		
+			if algo == "md5" and hashlib.md5(mangledWord.encode()).hexdigest() == passwordHash:
+				solution.value = mangledWord
 				return
 				
-			if algo == "sha1" and hashlib.sha1(mangle.encode()).hexdigest() == passwordHash:
-				cancelThreads = True
-				solution = mangle
+			if algo == "sha1" and hashlib.sha1(mangledWord.encode()).hexdigest() == passwordHash:
+				solution.value = mangledWord
 				return
 			
-			if algo == "sha256" and hashlib.sha256(mangle.encode()).hexdigest() == passwordHash:
-				cancelThreads = True
-				solution = mangle
+			if algo == "sha256" and hashlib.sha256(mangledWord.encode()).hexdigest() == passwordHash:
+				solution.value = mangledWord
 				return
 
 	
@@ -294,50 +285,29 @@ def startCrackWithCPU(passwordHash, algo, file, mangle):
 		print(Exception)
 		print("Error reading file")
 		return None
-
+	
 	# w/ multiprocessing
+	manager = multiprocessing.Manager()
+	solution = manager.Value('str', None)
+
+	# solution = None
+
 	numThreads = 12
 	seperatedList = list(divideList(wordList, numThreads))
 
 	# Create threads
 	threads = []
 	for i in range(numThreads):
-		thread = multiprocessing.Process(target=crackPassword, args=(passwordHash, algo, seperatedList[i], mangle))
+		thread = multiprocessing.Process(target=crackPassword, args=(passwordHash, algo, seperatedList[i], mangle, solution))
 		threads.append(thread)
 		thread.start()
-
 	for thread in threads:
 		thread.join()
-
-	# w/ threading
-	# numThreads = 8
-	# seperatedList = list(divideList(wordList, numThreads))
-
-	# # Create threads
-	# threads = []
-	# for i in range(numThreads):
-	# 	thread = threading.Thread(target=crackPassword, args=(passwordHash, algo, seperatedList[i], True))
-	# 	threads.append(thread)
-	# 	thread.start()
-
-	# for thread in threads:
-	# 	thread.join()
-
-	# crackPassword(passwordHash, algo, seperatedList, mangle)
-
-	result = solution if solution is not None else None
-
-	if result is not None:
-		print("Password found:", result)
-	elif mangle:
-		print("Password not in given word list nor is a variation of a word in the word list")
-	else:
-		print("Password not found in the given word list.")
 	
 	toc = time.perf_counter()
 	print(f"{toc - tic:0.4f} seconds")
 
-	return result
+	return solution.value
 
 
 def divideList(list, num):
@@ -374,41 +344,47 @@ def mangleList(masterWord):
 	symbols
 	common add ons (123)
 	leet
+	reverse
 	"""
-	wordList = [masterWord, masterWord.upper()]
-	wordList.append(masterWord.lower())
+	wordList = []
 
-	temp = masterWord[0].upper()
+	wordList = [masterWord, masterWord.upper()] 				# whole word uppercase
+	wordList.append(masterWord.lower())							# whole word lowercase
+	wordList.append(masterWord[::-1])							# reverse word
+
+	temp = masterWord[0].upper()								# first letter uppercase
 	for i in range(1, len(masterWord)):
 		temp += masterWord[i]
-
 	wordList.append(temp)
 
-	wordListRecurse = []
-	[wordListRecurse.append(x) for x in wordList if x not in wordListRecurse]
+	wordList = list(set(wordList))								# remove duplicates
 
-	for _ in range(2):
+	for _ in range(2):											# 2 loops of symbols and numbers, so they can combine
 		temp = []
-		for x in wordListRecurse:
+		for x in wordList:
 			temp.extend(generateLeetVariants(x))
 			temp.extend(generateSymbolVariants(x))
-		wordListRecurse.extend(temp)
+		wordList.extend(temp)
+
+	wordList = list(set(wordList))
+
+	temp1 = wordList
+	temp2 = []
+	for x in temp1:
+		temp2.extend((f"{x}1", f"{x}123", f"{x}abc", f"{x}!")) 	# Append common patterns
+		temp2.extend((f"1{x}", f"123{x}", f"abc{x}", f"!{x}")) 	# Prepend common patterns
+	wordList.extend(temp2)
 	
-	temp = []
-	for x in wordListRecurse:
-		temp.extend((f"{x}1", f"{x}123", f"{x}abc", f"{x}!")) # Append common patterns
-		temp.extend((f"1{x}", f"123{x}", f"abc{x}", f"!{x}")) # Prepend common patterns
+	if len(wordList) < 220:										# prevent creates lists > 50000, takes too long
+		for x in temp1:
+			for i in range(1970, 2023):
+				temp2.append(x + str(i))
+				temp2.append(str(i) + x)
+		wordList.extend(temp2)
 
-		for i in range(1970, 2023):
-			temp.append(x + str(i))
-			temp.append(str(i) + x)
+	wordList = list(set(wordList))
 
-	wordListRecurse.extend(temp)
-	
-	res = []
-	[res.append(x) for x in wordListRecurse if x not in res]
-
-	return res
+	return wordList
 
 
 def generateLeetVariants(word):
