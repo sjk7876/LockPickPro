@@ -6,7 +6,11 @@ This file runs the GUI for the program, relying on bruteforce.py for the work
 
 import bruteforce
 
+import tkinter as tk
 from tkinter import *
+from tkinter import messagebox
+from tkinter import ttk
+# from tkinter.ttk import *
 
 """
 TODO
@@ -24,56 +28,136 @@ frame = ""
 def main():
     global frame
 
-    gui = Tk()
-    gui.title("Lock Pick Pro")
-    gui.geometry("400x300")
-
-    frame = startPage(gui)
-    frame.pack()
-
+    gui = App()
+    
+    # frame = startFrame(gui)
+    frame = optionsFrame(gui, "123", "pass", "md5", True)
+# mHash, mPass, mAlgo, givenHash
     gui.mainloop()
 
 
-def startPage(gui):
-    print("start")
-
-    frame = Frame(gui)
-
-    #DEE6F2
-    #EBF0F7
-
-    # Create header
-    headerLabel = Label(frame, text="Choose Method", font=("Courier", 14))
-
-    # Create labels for inputs
-    hashLabel = Label(frame, text="Hash:")
-    orLabel = Label(frame, text="or")
-    passLabel = Label(frame, text="Password:")
-    algoLabel = Label(frame, text="Algorithm:")
-
-    # Create input fields
-    hashEntry = Entry(frame, bg='#DEE6F2')
-    passEntry = Entry(frame, bg='#DEE6F2')
-    algoEntry = Entry(frame, bg='#DEE6F2')
-
-    # Create continue button
-    startPageCont = Button(frame, text="continue")
-
-    # Organize widgets using grid layout
-    headerLabel.grid(row=0, column=1, padx=10, pady=5, sticky=E)
-    hashLabel.grid(row=1, column=0, padx=10, pady=5, sticky=E)
-    orLabel.grid(row=2, column=0, padx=10, pady=5, sticky=E)
-    passLabel.grid(row=3, column=0, padx=10, pady=5, sticky=E)
-    algoLabel.grid(row=4, column=0, padx=10, pady=5, sticky=E)
-    hashEntry.grid(row=1, column=1, padx=10, pady=5)
-    passEntry.grid(row=3, column=1, padx=10, pady=5)
-    algoEntry.grid(row=4, column=1, padx=10, pady=5)
-    startPageCont.grid(row=5,column=1, padx=10, pady=5)
-
-    return frame
+class App(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("Lock Pick Pro")
+        self.geometry("400x300")
+        self.minsize(200, 200)
+        self.maxsize(900, 900)
 
 
+class startFrame(ttk.Frame):
+    def __init__(self, container):
+        super().__init__(container)
+
+        self.mHash = StringVar(self, "")
+        self.mPass = StringVar(self, "")
+        self.mAlgo = StringVar(self, "")
+        self.givenHash = BooleanVar(self)
+
+        # Create header
+        self.headerLabel = ttk.Label(self, text="Choose Method", font=("Courier", 14))
+
+        # Create labels for inputs
+        self.hashLabel = ttk.Label(self, text="Hash:")
+        self.orLabel = ttk.Label(self, text="or")
+        self.passLabel = ttk.Label(self, text="Password:")
+        self.algoLabel = ttk.Label(self, text="Algorithm:")
+
+        # Create input fields
+        self.hashEntry = ttk.Entry(self)
+        self.passEntry = ttk.Entry(self)
+
+        # Create radio buttons
+        self.MD5Radio = ttk.Radiobutton(self, text="MD5", value="md5", variable=self.mAlgo)
+        self.SHA1Radio = ttk.Radiobutton(self, text="SHA1", value="sha1", variable=self.mAlgo)
+        self.SHA256Radio = ttk.Radiobutton(self, text="SHA256", value="sha256", variable=self.mAlgo)
+
+        # Create continue button
+        self.startPageCont = ttk.Button(self, text="continue", command=self.startPageContClick)
+
+        # Organize widgets using grid layout
+        self.headerLabel.grid(row=0, column=1, padx=10, pady=5, sticky=E)
+        self.hashLabel.grid(row=1, column=0, padx=10, pady=5, sticky=E)
+        self.orLabel.grid(row=2, column=0, padx=10, pady=5, sticky=E)
+        self.passLabel.grid(row=3, column=0, padx=10, pady=5, sticky=E)
+        self.algoLabel.grid(row=4, column=0, padx=10, pady=5, sticky=E)
+        self.hashEntry.grid(row=1, column=1, padx=10, pady=5)
+        self.passEntry.grid(row=3, column=1, padx=10, pady=5)
+        self.MD5Radio.grid(row=4, column=1, padx=10, pady=5, sticky=E)
+        self.SHA1Radio.grid(row=4, column=2, padx=10, pady=5, sticky=E)
+        self.SHA256Radio.grid(row=4, column=3, padx=10, pady=5, sticky=E)
+        self.startPageCont.grid(row=5,column=1, padx=10, pady=5)
+
+        self.pack()
     
+
+    def startPageContClick(self):
+        # Validate inputs
+        if self.hashEntry.get() != "":
+            self.mHash = self.hashEntry.get()
+            self.givenHash = True
+            # store and go to next page
+
+        elif self.passEntry.get() != "" and self.mAlgo != "":
+            self.mPass = self.passEntry.get()
+            self.givenHash = False
+        
+        else:
+            messagebox.showwarning("Warning", "Please either fill in the hash or fill in the password and select an algorithm.")
+            return
+        
+        # go to next page somehow
+
+
+class optionsFrame(ttk.Frame):
+    def __init__(self, container, mHash, mPass, mAlgo, givenHash):
+        super().__init__(container)
+
+        self.mHash = StringVar(self, mHash)
+        self.mPass = StringVar(self, mPass)
+        self.mAlgo = StringVar(self, mAlgo)
+        self.givenHash = BooleanVar(self, givenHash)
+        self.mangle = BooleanVar(self)
+        self.file = StringVar(self, "")
+
+        # Create header
+        self.headerLabel = ttk.Label(self, text="Cracking Options", font=("Courier", 14))
+
+        # Create labels for inputs
+        self.mangeLabel = ttk.Label(self, text="Mangle:")
+        self.wordListLabel = ttk.Label(self, text="WordList:")
+
+        # Create entry for inputs
+        self.customFileEntry = ttk.Entry(self)
+
+        # Create radio buttons
+        self.yesRadio = ttk.Radiobutton(self, text="Yes", value=True, variable=self.mangle)
+        self.noRadio = ttk.Radiobutton(self, text="No", value=False, variable=self.mangle)
+
+        # TODO Change to for loop with bruteforce call to print list of files
+        self.fasttrackRadio = ttk.Radiobutton(self, text="fasttrack.txt", value="fasttrack.txt", variable=self.file)
+        self.customFileRadio = ttk.Radiobutton(self, text="Custom:", value=self.customFileEntry.get(), variable=self.file)
+
+        # Create continue button
+        self.optionsPageCont = ttk.Button(self, text="start", command=self.optionsPageContClick)
+
+        # Organize widgets using grid layout
+        self.headerLabel.grid(row=0, column=1, padx=10, pady=5, sticky=E)
+        self.mangeLabel.grid(row=1, column=0, padx=10, pady=5, sticky=E)
+        self.yesRadio.grid(row=1, column=1, padx=10, pady=5, sticky=E)
+        self.noRadio.grid(row=1, column=2, padx=10, pady=5, sticky=E)
+        self.wordListLabel.grid(row=2, column=0, padx=10, pady=5, sticky=E)
+        self.fasttrackRadio.grid(row=3, column=0, padx=10, pady=5, sticky=E)
+        self.customFileRadio.grid(row=4, column=0, padx=10, pady=5, sticky=E)
+        self.customFileEntry.grid(row=4, column=1, pady=5, sticky=E)
+        self.optionsPageCont.grid(row=5, column=1, padx=10, pady=5, sticky=E)
+
+        self.pack()
+    
+    
+    def optionsPageContClick(self):
+        print(self.mangle.get())
+        print(self.file.get())
 
 
 if (__name__ == "__main__"):
