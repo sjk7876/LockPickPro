@@ -31,39 +31,29 @@ P@ssword md5	- 161ebd7d45089b3446ee4e0d86dbcf92
 
 """
 TODO
-Move mangling to inside threading
-do one mangle at a time
+allow user to specify password list
+
+progress bar ?
 """
 
 
 """
 TODO -
 viewmodel -
-	sha1 hashing
-	sha256 hashing
-	md5 hashing
-
 	import password list
 
 	have list of password wordlists that one can use
 		provide user ability to select wordlist
 	mangle option
 
-	"generating word list"
-	then go to progress bar after
-
 	hash finding
 
-	gpu threading
-
 	potentially bcrypt
-	potentially cpu multi threading
 
 	option to input a plain-text password + hashing algo
 
 cli -
 	extremely basic
-	"dank memes"
 
 gui -
 	loading bar

@@ -32,6 +32,5 @@ def main():
     # bruteforce.mangleList("database")
             
 
-
 if (__name__ == "__main__"):
     main()
