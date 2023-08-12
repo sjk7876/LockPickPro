@@ -171,6 +171,7 @@ def hashPasswordWithAlgo(password, algo):
 	Returns:
 		String: hex value of hash
 	"""
+	print(password, algo)
 	if algo == "md5":
 		return hashlib.md5(password.encode()).hexdigest()
 	elif algo == "sha1":

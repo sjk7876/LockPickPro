@@ -6,10 +6,9 @@ This file runs the GUI for the program, relying on bruteforce.py for the work
 
 import bruteforce
 
-import tkinter as tk
-from tkinter import *
+import tkinter
+from tkinter import StringVar, messagebox, ttk, E, BooleanVar, Frame
 from tkinter import messagebox
-from tkinter import ttk
 # from tkinter.ttk import *
 
 """
@@ -23,36 +22,66 @@ max size
 GENERATE EXE
 """
 
-frame = ""
+# Global to hold current hash, file location, and mangle flag
+masterHash = ""
+masterFile = ""
+masterMangle = False
 
 def main():
     global frame
 
     gui = App()
-    
+
+    # goToStart(gui)
+
     # frame = startFrame(gui)
-    frame = optionsFrame(gui, "123", "pass", "md5", True)
-# mHash, mPass, mAlgo, givenHash
+    # frame.pack()
+    
+    # start = startFrame(gui)
+    # options = optionsFrame(gui)
+
     gui.mainloop()
 
 
-class App(tk.Tk):
+class App(tkinter.Tk):
     def __init__(self):
         super().__init__()
+        
         self.title("Lock Pick Pro")
         self.geometry("400x300")
         self.minsize(200, 200)
         self.maxsize(900, 900)
 
+        container = Frame(self)
+        container.pack(side="top", fill="both", expand=True)
+        container.grid_rowconfigure(0, weight=1)
+        container.grid_columnconfigure(0, weight=1)
+
+        self.frames = {}
+        for F in (startFrame, optionsFrame, computeFrame):
+            page_name = F.__name__
+            frame = F(parent=container, controller=self)
+            self.frames[page_name] = frame
+
+            # put all of the pages in the same location;
+            # the one on the top of the stacking order
+            # will be the one that is visible.
+            frame.grid(row=0, column=0, sticky="nsew")
+
+        self.show_frame("startFrame")
+
+    def show_frame(self, page_name):
+        frame = self.frames[page_name]
+        frame.tkraise()
+
 
 class startFrame(ttk.Frame):
-    def __init__(self, container):
-        super().__init__(container)
+    def __init__(self, parent, controller):
+        super().__init__(parent)
 
-        self.mHash = StringVar(self, "")
-        self.mPass = StringVar(self, "")
+        global masterHash
+
         self.mAlgo = StringVar(self, "")
-        self.givenHash = BooleanVar(self)
 
         # Create header
         self.headerLabel = ttk.Label(self, text="Choose Method", font=("Courier", 14))
@@ -73,7 +102,7 @@ class startFrame(ttk.Frame):
         self.SHA256Radio = ttk.Radiobutton(self, text="SHA256", value="sha256", variable=self.mAlgo)
 
         # Create continue button
-        self.startPageCont = ttk.Button(self, text="continue", command=self.startPageContClick)
+        self.startPageCont = ttk.Button(self, text="continue", command=lambda: self.startPageContClick(controller))
 
         # Organize widgets using grid layout
         self.headerLabel.grid(row=0, column=1, padx=10, pady=5, sticky=E)
@@ -88,35 +117,32 @@ class startFrame(ttk.Frame):
         self.SHA256Radio.grid(row=4, column=3, padx=10, pady=5, sticky=E)
         self.startPageCont.grid(row=5,column=1, padx=10, pady=5)
 
-        self.pack()
+        # self.pack()
     
 
-    def startPageContClick(self):
+    def startPageContClick(self, controller):
+        global masterHash
+
         # Validate inputs
         if self.hashEntry.get() != "":
-            self.mHash = self.hashEntry.get()
-            self.givenHash = True
+            masterHash = self.hashEntry.get()
             # store and go to next page
 
         elif self.passEntry.get() != "" and self.mAlgo != "":
-            self.mPass = self.passEntry.get()
-            self.givenHash = False
+            masterHash = bruteforce.hashPasswordWithAlgo(self.passEntry.get(), self.mAlgo.get())
         
         else:
             messagebox.showwarning("Warning", "Please either fill in the hash or fill in the password and select an algorithm.")
             return
         
-        # go to next page somehow
+        print(masterHash)
+        controller.show_frame("optionsFrame")
 
 
 class optionsFrame(ttk.Frame):
-    def __init__(self, container, mHash, mPass, mAlgo, givenHash):
-        super().__init__(container)
+    def __init__(self, parent, controller):
+        super().__init__(parent)
 
-        self.mHash = StringVar(self, mHash)
-        self.mPass = StringVar(self, mPass)
-        self.mAlgo = StringVar(self, mAlgo)
-        self.givenHash = BooleanVar(self, givenHash)
         self.mangle = BooleanVar(self)
         self.file = StringVar(self, "")
 
@@ -135,11 +161,11 @@ class optionsFrame(ttk.Frame):
         self.noRadio = ttk.Radiobutton(self, text="No", value=False, variable=self.mangle)
 
         # TODO Change to for loop with bruteforce call to print list of files
-        self.fasttrackRadio = ttk.Radiobutton(self, text="fasttrack.txt", value="fasttrack.txt", variable=self.file)
-        self.customFileRadio = ttk.Radiobutton(self, text="Custom:", value=self.customFileEntry.get(), variable=self.file)
+        self.fasttrackRadio = ttk.Radiobutton(self, text="fasttrack.txt", value="wordlists/fasttrack.txt", variable=self.file)
+        self.customFileRadio = ttk.Radiobutton(self, text="Custom (full path):", value=self.customFileEntry.get(), variable=self.file)
 
         # Create continue button
-        self.optionsPageCont = ttk.Button(self, text="start", command=self.optionsPageContClick)
+        self.optionsPageCont = ttk.Button(self, text="start", command=lambda: self.optionsPageContClick(controller))
 
         # Organize widgets using grid layout
         self.headerLabel.grid(row=0, column=1, padx=10, pady=5, sticky=E)
@@ -152,82 +178,65 @@ class optionsFrame(ttk.Frame):
         self.customFileEntry.grid(row=4, column=1, pady=5, sticky=E)
         self.optionsPageCont.grid(row=5, column=1, padx=10, pady=5, sticky=E)
 
-        self.pack()
+        # self.pack()
     
     
-    def optionsPageContClick(self):
-        print(self.mangle.get())
-        print(self.file.get())
+    def optionsPageContClick(self, controller):
+        global masterFile, masterMangle
+
+        # TODO test this validation
+        try:
+            with open(self.file.get(), "r") as f:
+                x = f.read()
+            masterFile = self.file.get()
+            masterMangle = self.mangle.get()
+        except Exception as e:
+            print("Error reading file")
+            messagebox.showwarning("Warning", "No such file")
+            return
+
+        controller.show_frame("computeFrame")
+        
+
+class computeFrame(ttk.Frame):
+    def __init__(self, parent, controller):
+        global masterHash, masterFile, masterMangle
+
+        super().__init__(parent)
+
+        # TODO create progress bar
+
+        # Create labels for inputs
+        self.progressLabel = ttk.Label(self, text="Progress")
+        self.foundLabel = ttk.Label(self, text="Found Password:")
+        self.algoLabel = ttk.Label(self, text="Algorithm Used:")
+
+        algo = bruteforce.determineHashAlgo(masterHash)
+
+        foundPass = bruteforce.startCrackWithCPU(masterHash, algo, masterFile, masterMangle)
+
+        # Create labels for output
+        if foundPass is None:
+            self.foundOutLabel = ttk.Label(self, text="Match not found")
+        else:
+            self.foundOutLabel = ttk.Label(self, text=foundPass)
+
+        self.algoOutLabel = ttk.Label(self, text=algo)
+
+        # Create continue button
+        self.computePageCont = ttk.Button(self, text="restart", command=lambda: controller.show_frame("startFrame"))
+
+        # Organize widgets using grid layout
+        self.progressLabel.grid(row=0, column=1, padx=10, pady=5, sticky=E)
+        self.foundLabel.grid(row=1, column=0, padx=10, pady=5, sticky=E)
+        self.foundOutLabel.grid(row=1, column=1, padx=10, pady=5, sticky=E)
+        self.algoLabel.grid(row=2, column=0, padx=10, pady=5, sticky=E)
+        self.algoOutLabel.grid(row=2, column=1, padx=10, pady=5, sticky=E)
+        self.computePageCont.grid(row=3, column=1, padx=10, pady=5, sticky=E)
 
 
 if (__name__ == "__main__"):
     main()
 
-"""
-def on_button_click():
-    input1_value = entry1.get()
-    input2_value = entry2.get()
-    input3_value = entry3.get()
-    
-    entry1.destroy()
-    entry2.destroy()
-    entry3.destroy()
-    label1.destroy()
-    label2.destroy()
-    label3.destroy()
-    button.destroy()
-    
-    result_label.config(text=f"Input 1: {input1_value}\nInput 2: {input2_value}\nInput 3: {input3_value}")
-    
-    radio_var = tk.StringVar(root, "Option 1")
-    
-    def on_radio_change():
-        selected_option = radio_var.get()
-        selected_label.config(text=f"Selected Option: {selected_option}")
-    
-    radio1 = tk.Radiobutton(root, text="Option 1", variable=radio_var, value="Option 1", command=on_radio_change)
-    radio2 = tk.Radiobutton(root, text="Option 2", variable=radio_var, value="Option 2", command=on_radio_change)
-    
-    input_new = tk.Entry(root)
-    submit_new = tk.Button(root, text="Submit", command=lambda: print(f"Entered Value: {input_new.get()}"))
-    selected_label = tk.Label(root, text="Selected Option: ")
-    
-    radio1.grid(row=0, column=0, padx=10, pady=5)
-    radio2.grid(row=1, column=0, padx=10, pady=5)
-    input_new.grid(row=2, column=0, padx=10, pady=5)
-    submit_new.grid(row=3, column=0, padx=10, pady=10)
-    selected_label.grid(row=4, column=0, padx=10, pady=5)
-
-# Create the main window
-root = tk.Tk()
-root.title("Input Program")
-
-# Create labels for inputs
-label1 = tk.Label(root, text="Input 1:")
-label2 = tk.Label(root, text="Input 2:")
-label3 = tk.Label(root, text="Input 3:")
-
-# Create input fields
-entry1 = tk.Entry(root)
-entry2 = tk.Entry(root)
-entry3 = tk.Entry(root)
-
-# Create a button
-button = tk.Button(root, text="Submit", command=on_button_click)
-
-# Create a label to display results
-result_label = tk.Label(root, text="Results will appear here.")
-
-# Organize widgets using grid layout
-label1.grid(row=0, column=0, padx=10, pady=5, sticky=tk.E)
-label2.grid(row=1, column=0, padx=10, pady=5, sticky=tk.E)
-label3.grid(row=2, column=0, padx=10, pady=5, sticky=tk.E)
-entry1.grid(row=0, column=1, padx=10, pady=5)
-entry2.grid(row=1, column=1, padx=10, pady=5)
-entry3.grid(row=2, column=1, padx=10, pady=5)
-button.grid(row=3, columnspan=2, padx=10, pady=10)
-result_label.grid(row=4, columnspan=2, padx=10, pady=5)
-
-# Start the Tkinter event loop
-root.mainloop()
-"""
+# TODO
+# fix computeFrame, have to wait for bruteforce to finish first
