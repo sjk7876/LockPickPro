@@ -409,11 +409,3 @@ def generateSymbolVariants(word):
 		possibles.append( (l,) if ll == l else (l, ll) )
 	
 	return [ ''.join(t) for t in product(*possibles) ]
-
-
-def main():
-	print()
-
-
-if (__name__ == "__main__"):
-	main()
