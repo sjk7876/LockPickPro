@@ -1,4 +1,4 @@
-# Secure Client Server Environment
+# LockPickPro
 ## About
 The given prompt for this project was to develop a Penetration Testing Tool.<br>
 This project is an attempt at making something similar to John The Ripper, a brute-force application to find the password relating to a given hash.
