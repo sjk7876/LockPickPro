@@ -44,16 +44,9 @@ viewmodel -
 
 	have list of password wordlists that one can use
 		provide user ability to select wordlist
-	mangle option
-
-	hash finding
 
 	potentially bcrypt
 
-	option to input a plain-text password + hashing algo
-
-cli -
-	extremely basic
 
 gui -
 	loading bar
@@ -280,9 +273,8 @@ def startCrackWithCPU(passwordHash, algo, file, mangle):
 	manager = multiprocessing.Manager()
 	solution = manager.Value('str', None)
 
-	# solution = None
+	numThreads = multiprocessing.cpu_count() - 2
 
-	numThreads = 12
 	seperatedList = list(divideList(wordList, numThreads))
 
 	# Create threads

@@ -16,7 +16,6 @@ from playsound import playsound
 
 """
 TODO
-metal pipe falling sound
 nyan cat loading bar ?
 
 GENERATE EXE
@@ -142,7 +141,6 @@ class startFrame(ttk.Frame):
             messagebox.showwarning("Warning", "Please either fill in the hash or fill in the password and select an algorithm.")
             return
         
-        print(masterHash)
         controller.show_frame("optionsFrame")
 
 
@@ -150,15 +148,15 @@ class optionsFrame(ttk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
 
-        self.mangle = BooleanVar(self)
-        self.file = StringVar(self, "")
+        self.mangle = BooleanVar(self, True)
+        self.file = StringVar(self, "wordlists/fasttrack.txt")
 
         # Create header
         self.headerLabel = ttk.Label(self, text="Cracking Options", font=("Courier", 14))
 
         # Create labels for inputs
-        self.mangeLabel = ttk.Label(self, text="Mangle:")
-        self.wordListLabel = ttk.Label(self, text="WordList:")
+        self.mangeLabel = ttk.Label(self, text="Mangle      :")
+        self.wordListLabel = ttk.Label(self, text="Choose a word list:")
 
         # Create entry for inputs
         self.customFileEntry = ttk.Entry(self)
@@ -240,15 +238,13 @@ class computeFrame(ttk.Frame):
     
 
     def update_ui(self, algo, foundPass):
-        # metalPipeSound = AudioSegment.from_mp3("sounds\metal_pipe.mp3")
-        # play(metalPipeSound)
-        playsound('sounds\metal_pipe.mp3')
-
         self.algoOutLabel.config(text=algo)
         if foundPass is not None:
             self.foundOutLabel.config(text=foundPass)
         else: 
             self.foundOutLabel.config(text="No match found")
+        
+        playsound('sounds\metal_pipe.mp3')
     
     
     def reset(self):
@@ -258,6 +254,3 @@ class computeFrame(ttk.Frame):
 
 if (__name__ == "__main__"):
     main()
-
-# TODO
-# fix computeFrame, have to wait for bruteforce to finish first
