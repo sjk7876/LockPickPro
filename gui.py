@@ -12,6 +12,8 @@ from tkinter import messagebox
 
 from threading import Thread
 
+from playsound import playsound
+
 """
 TODO
 metal pipe falling sound
@@ -25,6 +27,8 @@ GENERATE EXE
 masterHash = ""
 masterFile = ""
 masterMangle = False
+
+# metalPipeSound = AudioSegment.from_mp3("E:\Coding\PenTestingTool\sounds\metal_pipe.mp3")
 
 
 def main():
@@ -236,6 +240,10 @@ class computeFrame(ttk.Frame):
     
 
     def update_ui(self, algo, foundPass):
+        # metalPipeSound = AudioSegment.from_mp3("sounds\metal_pipe.mp3")
+        # play(metalPipeSound)
+        playsound('sounds\metal_pipe.mp3')
+
         self.algoOutLabel.config(text=algo)
         if foundPass is not None:
             self.foundOutLabel.config(text=foundPass)
