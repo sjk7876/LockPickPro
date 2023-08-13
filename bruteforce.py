@@ -15,7 +15,6 @@ from itertools import product
 # from numba import cuda
 
 # CPU Multi-threading
-#import threading
 import multiprocessing
 
 
@@ -32,6 +31,7 @@ P@ssword md5	- 161ebd7d45089b3446ee4e0d86dbcf92
 """
 TODO
 allow user to specify password list
+	only allow reading from txt
 
 progress bar ?
 """
@@ -164,6 +164,7 @@ def hashPasswordWithAlgo(password, algo):
 	Returns:
 		String: hex value of hash
 	"""
+
 	if algo == "md5":
 		return hashlib.md5(password.encode()).hexdigest()
 	elif algo == "sha1":
@@ -260,6 +261,7 @@ def startCrackWithCPU(passwordHash, algo, file, mangle):
 	Returns
 		String: Returns found word or None type
 	"""
+
 	tic = time.perf_counter()
 	try:
 		with open(file, "r") as wordListFile:
@@ -310,7 +312,10 @@ def divideList(list, num):
 
 def mangleList(masterWord):
 	"""
-	Given a word, generates a list of variants that are 'mangled'
+	Given a word, generates a list of variants that are 'mangled.' 
+	Base cases are all lowercase, all uppercase, first letter capitalized, and word reversed.
+	These are sent into leet converters , ex 'e' to '3'.
+	These are sent into common pattern appenders and prependers
 
 	Args:
 		masterWord (String): Word to mangle
@@ -318,16 +323,7 @@ def mangleList(masterWord):
 	Returns:
 		List: String list of mangled words
 	"""
-	# do mangle shit
-	"""
-	lowercase
-	uppercase
-	numbers
-	symbols
-	common add ons (123)
-	leet
-	reverse
-	"""
+	
 	wordList = []
 
 	wordList = [masterWord, masterWord.upper()] 				# whole word uppercase
