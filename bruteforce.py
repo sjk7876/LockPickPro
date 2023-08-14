@@ -8,6 +8,7 @@ Uses multi-threading to speed up process
 import hashlib
 import time
 from itertools import product
+import os
 
 # GPU Acceleration
 #import numpy
@@ -40,11 +41,6 @@ progress bar ?
 """
 TODO -
 viewmodel -
-	import password list
-
-	have list of password wordlists that one can use
-		provide user ability to select wordlist
-
 	potentially bcrypt
 
 
@@ -405,3 +401,11 @@ def generateSymbolVariants(word):
 		possibles.append( (l,) if ll == l else (l, ll) )
 	
 	return [ ''.join(t) for t in product(*possibles) ]
+
+
+def getWordLists():	
+	files = os.listdir(os.getcwd()+'/wordlists/')
+	files = [f for f in files if os.path.isfile(os.getcwd() +'/wordlists/'+f)] 	#Filtering only the files.
+	files = [f for f in files if f.endswith(".txt")] 							#Filtering only the txt.
+
+	return files

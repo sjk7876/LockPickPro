@@ -7,27 +7,18 @@ This file runs the GUI for the program, relying on bruteforce.py for the work
 import bruteforce
 
 import tkinter
-from tkinter import StringVar, messagebox, ttk, E, BooleanVar, Frame
+from tkinter import StringVar, messagebox, ttk, E, W, BooleanVar, Frame, PhotoImage
 from tkinter import messagebox
 
 from threading import Thread
 
 from playsound import playsound
 
-"""
-TODO
-nyan cat loading bar ?
-
-GENERATE EXE
-"""
-
 
 # Global to hold current hash, file location, and mangle flag
 masterHash = ""
 masterFile = ""
 masterMangle = False
-
-# metalPipeSound = AudioSegment.from_mp3("E:\Coding\PenTestingTool\sounds\metal_pipe.mp3")
 
 
 def main():
@@ -46,6 +37,9 @@ class App(tkinter.Tk):
         self.geometry("400x300")
         self.minsize(200, 200)
         self.maxsize(900, 900)
+
+        photo = PhotoImage(file = 'amogus.png')
+        self.wm_iconphoto(False, photo)
 
         container = Frame(self)
         container.pack(side="top", fill="both", expand=True)
@@ -75,7 +69,7 @@ class App(tkinter.Tk):
             algo = bruteforce.determineHashAlgo(masterHash)
             found_pass = bruteforce.startCrackWithCPU(masterHash, algo, masterFile, masterMangle)
 
-            self.after(0, lambda: computeFrame.update_ui(algo, found_pass))
+            self.after(0, lambda: computeFrame.foundPasswordUpdate(algo, found_pass))
 
         thread = Thread(target=task)
         thread.start()
@@ -90,40 +84,53 @@ class startFrame(ttk.Frame):
         self.mAlgo = StringVar(self, "")
 
         # Create header
-        self.headerLabel = ttk.Label(self, text="Choose Method", font=("Courier", 14))
+        self.headerLabel = ttk.Label(self, text="Choose Method", font=("Courier", 14))  
 
-        # Create labels for inputs
-        self.hashLabel = ttk.Label(self, text="Hash:")
-        self.orLabel = ttk.Label(self, text="or")
-        self.passLabel = ttk.Label(self, text="Password:")
-        self.algoLabel = ttk.Label(self, text="Algorithm:")
+        # Create hash section
+        hashContainer = Frame(self)
 
-        # Create input fields
-        self.hashEntry = ttk.Entry(self)
-        self.passEntry = ttk.Entry(self)
+        self.hashLabel = ttk.Label(hashContainer, text="Hash:")
+        self.hashEntry = ttk.Entry(hashContainer)
 
-        # Create radio buttons
-        self.MD5Radio = ttk.Radiobutton(self, text="MD5", value="md5", variable=self.mAlgo)
-        self.SHA1Radio = ttk.Radiobutton(self, text="SHA1", value="sha1", variable=self.mAlgo)
-        self.SHA256Radio = ttk.Radiobutton(self, text="SHA256", value="sha256", variable=self.mAlgo)
+        self.hashLabel.grid(row=0, column=0, padx=10, sticky=W)
+        self.hashEntry.grid(row=0, column=1, padx=30, sticky=E)
+
+        # Create password section
+        passwordContainer = Frame(self)
+
+        self.passLabel = ttk.Label(passwordContainer, text="Password:")
+        self.passEntry = ttk.Entry(passwordContainer)
+
+        self.passLabel.grid(row=0, column=0, padx=10, sticky=W)
+        self.passEntry.grid(row=0, column=1, padx=10, sticky=W)
+
+        # Create or
+        self.orLabel = ttk.Label(self, text="or")      
+
+        # Create algo section
+        algoContainer = Frame(self)
+
+        self.algoLabel = ttk.Label(algoContainer, text="Algorithm:")
+
+        self.MD5Radio = ttk.Radiobutton(algoContainer, text="MD5", value="md5", variable=self.mAlgo)
+        self.SHA1Radio = ttk.Radiobutton(algoContainer, text="SHA1", value="sha1", variable=self.mAlgo)
+        self.SHA256Radio = ttk.Radiobutton(algoContainer, text="SHA256", value="sha256", variable=self.mAlgo)
+
+        self.algoLabel.grid(row=0, column=0, padx=10, sticky=W)
+        self.MD5Radio.grid(row=0, column=1, padx=10, sticky=W)
+        self.SHA1Radio.grid(row=0, column=2, padx=10, sticky=W)
+        self.SHA256Radio.grid(row=0, column=3, padx=10, sticky=W)
 
         # Create continue button
         self.startPageCont = ttk.Button(self, text="continue", command=lambda: self.startPageContClick(controller))
 
         # Organize widgets using grid layout
-        self.headerLabel.grid(row=0, column=1, padx=10, pady=5, sticky=E)
-        self.hashLabel.grid(row=1, column=0, padx=10, pady=5, sticky=E)
-        self.orLabel.grid(row=2, column=0, padx=10, pady=5, sticky=E)
-        self.passLabel.grid(row=3, column=0, padx=10, pady=5, sticky=E)
-        self.algoLabel.grid(row=4, column=0, padx=10, pady=5, sticky=E)
-        self.hashEntry.grid(row=1, column=1, padx=10, pady=5)
-        self.passEntry.grid(row=3, column=1, padx=10, pady=5)
-        self.MD5Radio.grid(row=4, column=1, padx=10, pady=5, sticky=E)
-        self.SHA1Radio.grid(row=4, column=2, padx=10, pady=5, sticky=E)
-        self.SHA256Radio.grid(row=4, column=3, padx=10, pady=5, sticky=E)
-        self.startPageCont.grid(row=5,column=1, padx=10, pady=5)
-
-        # self.pack()
+        self.headerLabel.grid(row=0, column=0, padx=10, pady=5, sticky=W)
+        hashContainer.grid(row=1, column=0, padx=30, pady=5, sticky=W)
+        self.orLabel.grid(row=2, column=0, padx=40, pady=5, sticky=W)
+        passwordContainer.grid(row=3, column=0, padx=30, pady=5, sticky=W)
+        algoContainer.grid(row=4, column=0, padx=30, pady=5, sticky=W)
+        self.startPageCont.grid(row=5,column=0, padx=10, pady=15)
     
 
     def startPageContClick(self, controller):
@@ -132,9 +139,8 @@ class startFrame(ttk.Frame):
         # Validate inputs
         if self.hashEntry.get() != "":
             masterHash = self.hashEntry.get()
-            # store and go to next page
 
-        elif self.passEntry.get() != "" and self.mAlgo != "":
+        elif self.passEntry.get() != "" and self.mAlgo.get() != "":
             masterHash = bruteforce.hashPasswordWithAlgo(self.passEntry.get(), self.mAlgo.get())
         
         else:
@@ -154,38 +160,45 @@ class optionsFrame(ttk.Frame):
         # Create header
         self.headerLabel = ttk.Label(self, text="Cracking Options", font=("Courier", 14))
 
-        # Create labels for inputs
-        self.mangeLabel = ttk.Label(self, text="Mangle      :")
-        self.wordListLabel = ttk.Label(self, text="Choose a word list:")
 
-        # Create entry for inputs
-        self.customFileEntry = ttk.Entry(self)
+        # Create mangle radio buttons
+        mangleContainer = Frame(self)
+        mangeLabel = ttk.Label(mangleContainer, text="Mangle:")
+        yesRadio = ttk.Radiobutton(mangleContainer, text="Yes", value=True, variable=self.mangle)
+        noRadio = ttk.Radiobutton(mangleContainer, text="No", value=False, variable=self.mangle)
 
-        # Create radio buttons
-        self.yesRadio = ttk.Radiobutton(self, text="Yes", value=True, variable=self.mangle)
-        self.noRadio = ttk.Radiobutton(self, text="No", value=False, variable=self.mangle)
+        mangeLabel.grid(row=0, column=0)
+        yesRadio.grid(row=1, column=0)
+        noRadio.grid(row=2, column=0)
 
-        # TODO Change to for loop with bruteforce call to print list of files
-        self.fasttrackRadio = ttk.Radiobutton(self, text="fasttrack.txt", value="wordlists/fasttrack.txt", variable=self.file)
-        self.customFileRadio = ttk.Radiobutton(self, text="Custom (full path):", value=self.customFileEntry.get(), variable=self.file)
+        # Create wordlist radio buttons
+        i = 0
+        wordListContainer = Frame(self)
+
+        wordListLabel = ttk.Label(wordListContainer, text="Choose a word list:")
+        wordListLabel.grid(row=i, column=0, sticky=W)
+
+        files = bruteforce.getWordLists()
+        for i in range(len(files)):
+            radio = ttk.Radiobutton(wordListContainer, text=files[i], value="wordlists/"+files[i], variable=self.file)
+            radio.grid(row=i+1, column=0, sticky=W)
+        
+        self.customFileEntry = ttk.Entry(wordListContainer)
+        self.customFileEntry.grid(row=i+2, column=1, sticky=W)
+
+        customFileRadio = ttk.Radiobutton(wordListContainer, text="Custom (full path):", value=self.customFileEntry.get(), variable=self.file)
+        customFileRadio.grid(row=i+2, column=0, sticky=W)
 
         # Create continue button
         self.optionsPageCont = ttk.Button(self, text="start", command=lambda: self.optionsPageContClick(controller))
 
         # Organize widgets using grid layout
-        self.headerLabel.grid(row=0, column=1, padx=10, pady=5, sticky=E)
-        self.mangeLabel.grid(row=1, column=0, padx=10, pady=5, sticky=E)
-        self.yesRadio.grid(row=1, column=1, padx=10, pady=5, sticky=E)
-        self.noRadio.grid(row=1, column=2, padx=10, pady=5, sticky=E)
-        self.wordListLabel.grid(row=2, column=0, padx=10, pady=5, sticky=E)
-        self.fasttrackRadio.grid(row=3, column=0, padx=10, pady=5, sticky=E)
-        self.customFileRadio.grid(row=4, column=0, padx=10, pady=5, sticky=E)
-        self.customFileEntry.grid(row=4, column=1, pady=5, sticky=E)
-        self.optionsPageCont.grid(row=5, column=1, padx=10, pady=5, sticky=E)
+        self.headerLabel.grid(row=0, column=0, padx=10, pady=5, sticky=W)
+        wordListContainer.grid(row=1, column=0, padx=40, pady=5)
+        mangleContainer.grid(row=1, column=1, padx=0, pady=5)
+        self.optionsPageCont.grid(row=2, column=0, padx=50, pady=15, sticky=W)
 
-        # self.pack()
-    
-    
+
     def optionsPageContClick(self, controller):
         global masterFile, masterMangle
 
@@ -211,33 +224,34 @@ class computeFrame(ttk.Frame):
 
         # TODO create progress bar
 
+        # Create header
+        self.headerLabel = ttk.Label(self, text="Cracking Progress", font=("Courier", 14))
+
         # Create labels for inputs
-        self.progressLabel = ttk.Label(self, text="Progress")
+        self.progressLabel = ttk.Label(self, text="Number Checked:")
         self.foundLabel = ttk.Label(self, text="Found Password:")
         self.algoLabel = ttk.Label(self, text="Algorithm Used:")
 
-        # algo = bruteforce.determineHashAlgo(masterHash)
-
-        # foundPass = bruteforce.startCrackWithCPU(masterHash, algo, masterFile, masterMangle)
-
         # Create labels for output
+        self.progressOutLabel = ttk.Label(self, text="")
         self.foundOutLabel = ttk.Label(self, text="")
-
         self.algoOutLabel = ttk.Label(self, text="")
 
         # Create continue button
         self.computePageCont = ttk.Button(self, text="restart", command=lambda: controller.show_frame("startFrame"))
 
         # Organize widgets using grid layout
-        self.progressLabel.grid(row=0, column=1, padx=10, pady=5, sticky=E)
-        self.foundLabel.grid(row=1, column=0, padx=10, pady=5, sticky=E)
-        self.foundOutLabel.grid(row=1, column=1, padx=10, pady=5, sticky=E)
-        self.algoLabel.grid(row=2, column=0, padx=10, pady=5, sticky=E)
-        self.algoOutLabel.grid(row=2, column=1, padx=10, pady=5, sticky=E)
-        self.computePageCont.grid(row=3, column=1, padx=10, pady=5, sticky=E)
+        self.headerLabel.grid(row=0, column=0, padx=10, pady=5, sticky=W)
+        self.progressLabel.grid(row=1, column=0, padx=10, pady=5, sticky=E)
+        self.progressOutLabel.grid(row=1, column=1, padx=10, pady=5, sticky=E)
+        self.foundLabel.grid(row=2, column=0, padx=10, pady=5, sticky=E)
+        self.foundOutLabel.grid(row=2, column=1, padx=10, pady=5, sticky=E)
+        self.algoLabel.grid(row=3, column=0, padx=10, pady=5, sticky=E)
+        self.algoOutLabel.grid(row=3, column=1, padx=10, pady=5, sticky=E)
+        self.computePageCont.grid(row=4, column=1, padx=10, pady=15, sticky=E)
     
 
-    def update_ui(self, algo, foundPass):
+    def foundPasswordUpdate(self, algo, foundPass):
         self.algoOutLabel.config(text=algo)
         if foundPass is not None:
             self.foundOutLabel.config(text=foundPass)
@@ -254,3 +268,7 @@ class computeFrame(ttk.Frame):
 
 if (__name__ == "__main__"):
     main()
+
+# TODO validate custom file works
+# TODO get more files
+# TODO num counted progress bar
