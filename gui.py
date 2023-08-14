@@ -34,7 +34,7 @@ class App(tkinter.Tk):
         super().__init__()
         
         self.title("Lock Pick Pro")
-        self.geometry("400x300")
+        self.geometry("500x300")
         self.minsize(200, 200)
         self.maxsize(900, 900)
 
@@ -160,7 +160,6 @@ class optionsFrame(ttk.Frame):
         # Create header
         self.headerLabel = ttk.Label(self, text="Cracking Options", font=("Courier", 14))
 
-
         # Create mangle radio buttons
         mangleContainer = Frame(self)
         mangeLabel = ttk.Label(mangleContainer, text="Mangle:")
@@ -186,7 +185,7 @@ class optionsFrame(ttk.Frame):
         self.customFileEntry = ttk.Entry(wordListContainer)
         self.customFileEntry.grid(row=i+2, column=1, sticky=W)
 
-        customFileRadio = ttk.Radiobutton(wordListContainer, text="Custom (full path):", value=self.customFileEntry.get(), variable=self.file)
+        customFileRadio = ttk.Radiobutton(wordListContainer, text="Custom (full path):", value="custom", variable=self.file)
         customFileRadio.grid(row=i+2, column=0, sticky=W)
 
         # Create continue button
@@ -201,16 +200,28 @@ class optionsFrame(ttk.Frame):
 
     def optionsPageContClick(self, controller):
         global masterFile, masterMangle
+        print(self.file.get())
+        print(self.customFileEntry.get)
 
         # TODO test this validation
         try:
+            if self.file.get() == "custom":
+                if self.customFileEntry.endswith(".txt"):
+                    self.file = self.customFileEntry.get()
+                    print("e",self.file.get())
+                else:
+                    messagebox.showwarning("Warning", "Must be a txt file")
+                    return
+            
             with open(self.file.get(), "r") as f:
                 x = f.read()
+
             masterFile = self.file.get()
             masterMangle = self.mangle.get()
+            self.file = ""
+            
         except Exception as e:
-            print("Error reading file")
-            messagebox.showwarning("Warning", "No such file")
+            messagebox.showwarning("Warning", "Error reading file")
             return
 
         controller.show_frame("computeFrame")
@@ -242,13 +253,13 @@ class computeFrame(ttk.Frame):
 
         # Organize widgets using grid layout
         self.headerLabel.grid(row=0, column=0, padx=10, pady=5, sticky=W)
-        self.progressLabel.grid(row=1, column=0, padx=10, pady=5, sticky=E)
-        self.progressOutLabel.grid(row=1, column=1, padx=10, pady=5, sticky=E)
-        self.foundLabel.grid(row=2, column=0, padx=10, pady=5, sticky=E)
-        self.foundOutLabel.grid(row=2, column=1, padx=10, pady=5, sticky=E)
-        self.algoLabel.grid(row=3, column=0, padx=10, pady=5, sticky=E)
-        self.algoOutLabel.grid(row=3, column=1, padx=10, pady=5, sticky=E)
-        self.computePageCont.grid(row=4, column=1, padx=10, pady=15, sticky=E)
+        self.progressLabel.grid(row=1, column=0, padx=30, pady=5, sticky=W)
+        self.progressOutLabel.grid(row=1, column=1, padx=30, pady=5, sticky=W)
+        self.foundLabel.grid(row=2, column=0, padx=30, pady=5, sticky=W)
+        self.foundOutLabel.grid(row=2, column=1, padx=30, pady=5, sticky=W)
+        self.algoLabel.grid(row=3, column=0, padx=30, pady=5, sticky=W)
+        self.algoOutLabel.grid(row=3, column=1, padx=30, pady=5, sticky=W)
+        self.computePageCont.grid(row=4, column=0, padx=10, pady=15)
     
 
     def foundPasswordUpdate(self, algo, foundPass):
@@ -258,7 +269,7 @@ class computeFrame(ttk.Frame):
         else: 
             self.foundOutLabel.config(text="No match found")
         
-        playsound('sounds\metal_pipe.mp3')
+        playsound('sounds/metal_pipe.mp3')
     
     
     def reset(self):
@@ -270,5 +281,7 @@ if (__name__ == "__main__"):
     main()
 
 # TODO validate custom file works
+    # TODO fix custom file checking
 # TODO get more files
 # TODO num counted progress bar
+# C:\Users\spenc\Downloads\help.txt
